@@ -3,6 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+const authRoutes = require("./routes/auth.routes");
+
 const app = express();
 
 app.disable("x-powered-by");
@@ -24,6 +26,13 @@ if (process.env.NODE_ENV !== "test") {
     app.use(morgan("dev"));
 }
 
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "SortMyScene booking API",
+    });
+});
+
 app.get("/api/health", (req, res) => {
     res.status(200).json({
         success: true,
@@ -31,6 +40,8 @@ app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.use((req, res) => {
     res.status(404).json({
@@ -43,11 +54,41 @@ app.use((req, res) => {
 app.use((error, req, res, next) => {
     console.error(error);
 
-    res.status(error.statusCode || 500).json({
+    if (error.code === 11000) {
+        return res.status(409).json({
+            success: false,
+            code: "DUPLICATE_RESOURCE",
+            message: "A resource with this value already exists",
+        });
+    }
+
+    if (error.name === "ValidationError") {
+        const message = Object.values(error.errors)
+            .map((validationError) => validationError.message)
+            .join(", ");
+
+        return res.status(422).json({
+            success: false,
+            code: "VALIDATION_ERROR",
+            message,
+        });
+    }
+
+    if (error.name === "CastError") {
+        return res.status(400).json({
+            success: false,
+            code: "INVALID_IDENTIFIER",
+            message: "The supplied identifier is invalid",
+        });
+    }
+
+    const statusCode = error.statusCode || 500;
+
+    res.status(statusCode).json({
         success: false,
         code: error.code || "INTERNAL_SERVER_ERROR",
         message:
-            error.statusCode && error.message
+            statusCode < 500 && error.message
                 ? error.message
                 : "An unexpected server error occurred",
     });
