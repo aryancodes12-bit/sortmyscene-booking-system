@@ -1,7 +1,7 @@
 import {
     useCallback,
     useEffect,
-    useMemo,
+
     useState,
 } from "react";
 
@@ -20,7 +20,7 @@ import CountdownTimer from "../components/booking/CountdownTimer";
 import SeatGrid from "../components/booking/SeatGrid";
 
 import { useAuth } from "../context/AuthContext";
-import { getEventPresentation } from "../data/eventPresentation";
+
 import { useReservation } from "../hooks/useReservation";
 
 const formatDateTime = (
@@ -131,16 +131,28 @@ export default function EventDetail() {
     const seats =
         eventData?.seats || [];
 
-    const presentation =
-        useMemo(
-            () =>
-                event
-                    ? getEventPresentation(
-                        event,
-                    )
-                    : null,
-            [event],
-        );
+    const presentation = event
+        ? {
+            category:
+                event.category ||
+                "NIGHTLIFE",
+
+            tag:
+                event.tag || "",
+
+            price:
+                Number(event.price) ||
+                0,
+
+            accent:
+                event.accent ||
+                "#8B5CF6",
+
+            theme:
+                event.theme ||
+                "purple",
+        }
+        : null;
 
     const toggleSeat = (
         seatNumber,

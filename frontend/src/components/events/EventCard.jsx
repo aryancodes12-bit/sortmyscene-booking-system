@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import { getEventPresentation } from "../../data/eventPresentation";
+
 
 const formatDate = (dateTime) =>
     new Intl.DateTimeFormat("en-IN", {
@@ -22,9 +22,22 @@ const formatTime = (dateTime) =>
 export default function EventCard({
     event,
 }) {
-    const presentation =
-        getEventPresentation(event);
+    const presentation = {
+        category:
+            event.category || "NIGHTLIFE",
 
+        tag:
+            event.tag || "",
+
+        price:
+            Number(event.price) || 0,
+
+        accent:
+            event.accent || "#8B5CF6",
+
+        theme:
+            event.theme || "purple",
+    };
     const soldOut =
         event.availableSeatCount === 0;
 

@@ -57,22 +57,24 @@ const createSeats = (eventId, bookedSeatNumbers = []) => {
 
 const seedDatabase = async () => {
     await connectDB();
-
     await Promise.all([
         Event.syncIndexes(),
         Seat.syncIndexes(),
         Reservation.syncIndexes(),
     ]);
-
     await Reservation.deleteMany({});
     await Seat.deleteMany({});
     await Event.deleteMany({});
-
     const events = await Event.insertMany([
         {
             name: "Mumbai Neon Nights",
             dateTime: createFutureDate(7, 20),
             venue: "Lower Parel, Mumbai",
+            price: 1500,
+            category: "CLUB NIGHT",
+            tag: "SOLD OUT LAST TIME",
+            theme: "purple",
+            accent: "#8B5CF6",
             totalSeats: 100,
             description:
                 "An immersive nightlife experience featuring electronic music, neon visuals and Mumbai's leading club artists.",
@@ -83,6 +85,11 @@ const seedDatabase = async () => {
             name: "Bollywood After Dark",
             dateTime: createFutureDate(12, 21),
             venue: "Bandra West, Mumbai",
+            price: 2000,
+            category: "ROOFTOP",
+            tag: "FEATURED",
+            theme: "gold",
+            accent: "#F59E0B",
             totalSeats: 100,
             description:
                 "A high-energy Bollywood night featuring popular dance anthems, live performers and premium nightlife production.",
@@ -93,6 +100,11 @@ const seedDatabase = async () => {
             name: "Rooftop Rhythm",
             dateTime: createFutureDate(18, 19, 30),
             venue: "Worli, Mumbai",
+            price: 999,
+            category: "LIVE MUSIC",
+            tag: "NEW",
+            theme: "pink",
+            accent: "#EC4899",
             totalSeats: 100,
             description:
                 "A sunset-to-midnight rooftop event with house music, city views and a curated Mumbai nightlife crowd.",
