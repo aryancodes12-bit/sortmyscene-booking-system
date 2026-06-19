@@ -13,7 +13,7 @@
 
 ## What This Is
 
-SortMyScene is a production-minded full-stack event seat-booking system. Users can discover nightlife events, inspect live seat availability, reserve multiple seats for ten minutes, and confirm their booking securely.
+SeatSync is a production-minded full-stack event seat-booking system. Users can discover nightlife events, inspect live seat availability, reserve multiple seats for ten minutes, and confirm their booking securely.
 
 The core booking flow uses MongoDB transactions, conditional seat updates, and strict reservation validation to ensure that two users cannot reserve or book the same seat.
 
