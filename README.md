@@ -1,4 +1,4 @@
-# 🎭 SortMyScene — Event Seat Booking System
+# 🎭 SeatSync — Event Seat Booking System
 
 > **Full Stack Hiring Assignment** · MERN Stack  
 > Built by **Aryan Jaiswal** · Submitted to SortMyScene
