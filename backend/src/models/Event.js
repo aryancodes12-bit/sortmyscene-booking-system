@@ -21,7 +21,51 @@ const EventSchema = new mongoose.Schema(
             trim: true,
             maxlength: [180, "Venue cannot exceed 180 characters"],
         },
+        price: {
+            type: Number,
+            required: [true, "Event price is required"],
+            min: [0, "Event price cannot be negative"],
+            validate: {
+                validator: Number.isInteger,
+                message: "Event price must be an integer",
+            },
+        },
 
+        category: {
+            type: String,
+            required: [true, "Event category is required"],
+            trim: true,
+            uppercase: true,
+            maxlength: [40, "Category cannot exceed 40 characters"],
+        },
+
+        tag: {
+            type: String,
+            trim: true,
+            uppercase: true,
+            maxlength: [60, "Event tag cannot exceed 60 characters"],
+            default: "",
+        },
+
+        theme: {
+            type: String,
+            required: [true, "Event theme is required"],
+            enum: {
+                values: ["purple", "gold", "pink"],
+                message: "Theme must be purple, gold or pink",
+            },
+        },
+
+        accent: {
+            type: String,
+            required: [true, "Event accent colour is required"],
+            trim: true,
+            uppercase: true,
+            match: [
+                /^#[0-9A-F]{6}$/,
+                "Accent must be a valid six-digit hexadecimal colour",
+            ],
+        },
         totalSeats: {
             type: Number,
             required: [true, "Total seats are required"],
