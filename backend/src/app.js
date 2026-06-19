@@ -8,6 +8,9 @@ const eventRoutes = require("./routes/event.routes");
 const reservationRoutes = require(
     "./routes/reservation.routes",
 );
+const bookingRoutes = require(
+    "./routes/booking.routes",
+);
 const app = express();
 
 app.disable("x-powered-by");
@@ -47,6 +50,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/reserve", reservationRoutes);
+app.use("/api/bookings", bookingRoutes);
 app.use((req, res) => {
     res.status(404).json({
         success: false,
