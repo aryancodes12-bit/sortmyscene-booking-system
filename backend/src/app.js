@@ -5,6 +5,9 @@ const morgan = require("morgan");
 
 const authRoutes = require("./routes/auth.routes");
 const eventRoutes = require("./routes/event.routes");
+const reservationRoutes = require(
+    "./routes/reservation.routes",
+);
 const app = express();
 
 app.disable("x-powered-by");
@@ -43,6 +46,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/reserve", reservationRoutes);
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -84,14 +88,20 @@ app.use((error, req, res, next) => {
 
     const statusCode = error.statusCode || 500;
 
-    res.status(statusCode).json({
+    const response = {
         success: false,
         code: error.code || "INTERNAL_SERVER_ERROR",
         message:
             statusCode < 500 && error.message
                 ? error.message
                 : "An unexpected server error occurred",
-    });
+    };
+
+    if (statusCode < 500 && error.details) {
+        response.details = error.details;
+    }
+
+    res.status(statusCode).json(response);
 });
 
 module.exports = app;

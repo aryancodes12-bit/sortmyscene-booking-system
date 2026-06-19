@@ -1,14 +1,15 @@
 const Seat = require("../models/Seat");
 
 /**
- * Releases seat locks whose reservation period has expired.
+ * Releases expired seat locks.
  *
- * MongoDB's TTL index removes Reservation documents, but it does not
- * update related Seat documents. reservedUntil allows those seats
- * to be reclaimed without a cron job.
+ * The Reservation TTL index deletes expired reservation documents,
+ * but MongoDB does not automatically update related Seat documents.
+ * reservedUntil allows stale seat locks to be reclaimed atomically.
  */
 const releaseExpiredSeats = async ({
     eventId = null,
+    seatNumbers = null,
     session = null,
 } = {}) => {
     const filter = {
@@ -20,6 +21,12 @@ const releaseExpiredSeats = async ({
 
     if (eventId) {
         filter.eventId = eventId;
+    }
+
+    if (Array.isArray(seatNumbers) && seatNumbers.length > 0) {
+        filter.seatNumber = {
+            $in: seatNumbers,
+        };
     }
 
     const options = session ? { session } : {};
