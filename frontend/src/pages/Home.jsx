@@ -125,6 +125,105 @@ export default function Home() {
                     </div>
                 )}
             </section>
+            <section
+                className="home-how-it-works"
+                aria-labelledby="how-it-works-title"
+            >
+                <div className="home-section-heading">
+                    <span>BOOKING MADE SIMPLE</span>
+
+                    <h2 id="how-it-works-title">
+                        HOW IT WORKS
+                    </h2>
+
+                    <p>
+                        Discover events, reserve your preferred seats and
+                        complete your booking before the reservation expires.
+                    </p>
+                </div>
+
+                <div className="home-steps-grid">
+                    <article className="home-step-card">
+                        <span className="home-step-number">01</span>
+
+                        <h3>CHOOSE AN EVENT</h3>
+
+                        <p>
+                            Explore curated nightlife events and view live seat
+                            availability before making your selection.
+                        </p>
+                    </article>
+
+                    <article className="home-step-card">
+                        <span className="home-step-number">02</span>
+
+                        <h3>RESERVE YOUR SEATS</h3>
+
+                        <p>
+                            Select multiple available seats and hold them securely
+                            for ten minutes.
+                        </p>
+                    </article>
+
+                    <article className="home-step-card">
+                        <span className="home-step-number">03</span>
+
+                        <h3>CONFIRM YOUR BOOKING</h3>
+
+                        <p>
+                            Confirm before the timer expires and receive your
+                            booking reference instantly.
+                        </p>
+                    </article>
+                </div>
+            </section>
+
+            <section className="home-trust-strip">
+                <div className="home-trust-icon" aria-hidden="true">
+                    ✓
+                </div>
+
+                <div>
+                    <h2>
+                        SECURE BOOKING. LIVE AVAILABILITY. NO DOUBLE BOOKINGS.
+                    </h2>
+
+                    <p>
+                        Every reservation is processed transactionally, preventing
+                        the same seat from being booked by multiple users.
+                    </p>
+                </div>
+            </section>
+
+            <footer className="home-footer">
+                <div>
+                    <strong>
+                        SORT<span>MY</span>SCENE
+                    </strong>
+
+                    <p>
+                        Secure, conflict-free event seat booking.
+                    </p>
+                </div>
+
+                <div className="home-footer-links">
+                    <a
+                        href="https://github.com/aryancodes12-bit/sortmyscene-booking-system"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        GITHUB
+                    </a>
+
+                    <a
+                        href="http://localhost:5000/api/events"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        API STATUS
+                    </a>
+                </div>
+            </footer>
         </main>
     );
 }

@@ -26,7 +26,15 @@ export default function Auth() {
 
     const redirect =
         new URLSearchParams(location.search).get("redirect") || "/";
+    const isEventRedirect =
+        redirect.startsWith("/events/");
 
+    const helperText =
+        mode === "register"
+            ? "Create an account to reserve and confirm your seats."
+            : isEventRedirect
+                ? "Login to continue your seat reservation."
+                : "Login to discover events and book seats securely.";
     const updateField = (event) => {
         const { name, value } = event.target;
 
@@ -107,11 +115,7 @@ export default function Auth() {
                         SORT<span>MY</span>SCENE
                     </h1>
 
-                    <p>
-                        {mode === "login"
-                            ? "Welcome back"
-                            : "Create your account"}
-                    </p>
+                    <p>{helperText}</p>
                 </div>
 
                 <div className="auth-tabs">
@@ -187,6 +191,15 @@ export default function Auth() {
                                 : "CREATE ACCOUNT →"}
                     </button>
                 </form>
+                <div className="auth-information">
+                    <p>WHY SIGN IN?</p>
+
+                    <div className="auth-information-items">
+                        <span>✓ Live seat availability</span>
+                        <span>✓ Secure 10-minute reservation</span>
+                        <span>✓ Conflict-free booking confirmation</span>
+                    </div>
+                </div>
             </section>
         </main>
     );
