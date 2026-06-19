@@ -745,10 +745,13 @@ The global state is limited to authentication and a small amount of booking stat
 
 ## Deployment
 
-```text
-Frontend: To be deployed
-Backend:  To be deployed
-```
+| Service | Live URL |
+|---|---|
+| Frontend | [SeatSync Web App](https://seat-sync-rho.vercel.app) |
+| Backend API | [SeatSync API](https://sortmyscene-api-2w7a.onrender.com) |
+| Health Check | [API Health](https://sortmyscene-api-2w7a.onrender.com/api/health) |
+
+> The Render free instance may require a short cold-start period after inactivity.
 
 Repository: [github.com/aryancodes12-bit/sortmyscene-booking-system](https://github.com/aryancodes12-bit/sortmyscene-booking-system)
 
