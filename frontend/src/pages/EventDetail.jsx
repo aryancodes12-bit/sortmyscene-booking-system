@@ -1,18 +1,13 @@
 import {
-    ArrowLeft,
-    CalendarDays,
-    MapPin,
-    Ticket,
-} from "lucide-react";
-
-import {
     useCallback,
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
 import {
     Link,
+    useNavigate,
     useParams,
 } from "react-router";
 
@@ -21,119 +16,506 @@ import {
     getEvent,
 } from "../api";
 
-import ErrorMessage from "../components/common/ErrorMessage";
-import Loader from "../components/common/Loader";
+import CountdownTimer from "../components/booking/CountdownTimer";
+import SeatGrid from "../components/booking/SeatGrid";
+
+import { useAuth } from "../context/AuthContext";
+import { getEventPresentation } from "../data/eventPresentation";
+import { useReservation } from "../hooks/useReservation";
+
+const formatDateTime = (
+    dateTime,
+) =>
+    new Intl.DateTimeFormat(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+        },
+    )
+        .format(new Date(dateTime))
+        .toUpperCase();
 
 export default function EventDetail() {
-    const { eventId } = useParams();
+    const { eventId } =
+        useParams();
 
-    const [eventData, setEventData] =
-        useState(null);
-    const [loading, setLoading] =
-        useState(true);
-    const [error, setError] = useState("");
+    const navigate =
+        useNavigate();
 
-    const loadEvent = useCallback(async () => {
-        setLoading(true);
-        setError("");
+    const {
+        isAuthenticated,
+    } = useAuth();
 
-        try {
-            const response = await getEvent(eventId);
-            setEventData(response.data.data);
-        } catch (requestError) {
-            setError(
-                getApiErrorMessage(
-                    requestError,
-                    "Unable to load this event",
-                ),
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [eventId]);
+    const [
+        eventData,
+        setEventData,
+    ] = useState(null);
+
+    const [
+        selectedSeats,
+        setSelectedSeats,
+    ] = useState([]);
+
+    const [
+        pageLoading,
+        setPageLoading,
+    ] = useState(true);
+
+    const [
+        pageError,
+        setPageError,
+    ] = useState("");
+
+    const {
+        reservation,
+        booking,
+        loading,
+        error,
+        setError,
+        reserve,
+        confirm,
+        clear,
+    } = useReservation();
+
+    const loadEvent =
+        useCallback(
+            async ({
+                silent = false,
+            } = {}) => {
+                if (!silent) {
+                    setPageLoading(true);
+                }
+
+                setPageError("");
+
+                try {
+                    const response =
+                        await getEvent(eventId);
+
+                    setEventData(
+                        response.data.data,
+                    );
+                } catch (
+                requestError
+                ) {
+                    setPageError(
+                        getApiErrorMessage(
+                            requestError,
+                            "Unable to load event",
+                        ),
+                    );
+                } finally {
+                    if (!silent) {
+                        setPageLoading(false);
+                    }
+                }
+            },
+            [eventId],
+        );
 
     useEffect(() => {
+        clear();
+        setSelectedSeats([]);
         loadEvent();
-    }, [loadEvent]);
+    }, [
+        eventId,
+        clear,
+        loadEvent,
+    ]);
 
-    if (loading) {
+    const event =
+        eventData?.event;
+
+    const seats =
+        eventData?.seats || [];
+
+    const presentation =
+        useMemo(
+            () =>
+                event
+                    ? getEventPresentation(
+                        event,
+                    )
+                    : null,
+            [event],
+        );
+
+    const toggleSeat = (
+        seatNumber,
+    ) => {
+        setError("");
+
+        setSelectedSeats(
+            (current) => {
+                if (
+                    current.includes(
+                        seatNumber,
+                    )
+                ) {
+                    return current.filter(
+                        (seat) =>
+                            seat !==
+                            seatNumber,
+                    );
+                }
+
+                if (
+                    current.length >= 6
+                ) {
+                    setError(
+                        "A maximum of 6 seats can be reserved at once.",
+                    );
+
+                    return current;
+                }
+
+                return [
+                    ...current,
+                    seatNumber,
+                ];
+            },
+        );
+    };
+
+    const handleReserve =
+        async () => {
+            if (
+                selectedSeats.length ===
+                0
+            ) {
+                setError(
+                    "Please select at least one seat.",
+                );
+
+                return;
+            }
+
+            if (!isAuthenticated) {
+                navigate(
+                    `/auth?redirect=${encodeURIComponent(
+                        `/events/${eventId}`,
+                    )}`,
+                );
+
+                return;
+            }
+
+            try {
+                await reserve(
+                    eventId,
+                    selectedSeats,
+                );
+
+                await loadEvent({
+                    silent: true,
+                });
+            } catch (
+            requestError
+            ) {
+                if (
+                    requestError
+                        .response
+                        ?.status === 409
+                ) {
+                    setSelectedSeats(
+                        [],
+                    );
+
+                    await loadEvent({
+                        silent: true,
+                    });
+                }
+            }
+        };
+
+    const handleExpire =
+        useCallback(
+            async () => {
+                clear();
+                setSelectedSeats([]);
+
+                setError(
+                    "Your reservation expired. Please select seats again.",
+                );
+
+                await loadEvent({
+                    silent: true,
+                });
+            },
+            [
+                clear,
+                loadEvent,
+                setError,
+            ],
+        );
+
+    const handleConfirm =
+        async () => {
+            try {
+                await confirm();
+
+                await loadEvent({
+                    silent: true,
+                });
+            } catch (
+            requestError
+            ) {
+                if (
+                    requestError
+                        .response
+                        ?.status === 410
+                ) {
+                    await handleExpire();
+                }
+            }
+        };
+
+    if (pageLoading) {
         return (
-            <main className="min-h-screen px-5 pb-20 pt-32">
-                <Loader label="Loading event..." />
+            <main className="booking-page booking-page-state">
+                LOADING EVENT...
             </main>
         );
     }
 
-    if (error) {
+    if (
+        pageError ||
+        !event ||
+        !presentation
+    ) {
         return (
-            <main className="mx-auto min-h-screen max-w-4xl px-5 pb-20 pt-32">
-                <ErrorMessage
-                    message={error}
-                    onRetry={loadEvent}
-                />
-            </main>
-        );
-    }
-
-    const { event, seats } = eventData;
-
-    return (
-        <main className="mx-auto min-h-screen max-w-7xl px-5 pb-20 pt-28 sm:px-8">
-            <Link
-                to="/#events"
-                className="inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-white"
-            >
-                <ArrowLeft size={17} />
-                Back to events
-            </Link>
-
-            <section className="mt-8 rounded-3xl border border-white/[0.08] bg-[#090909] p-6 sm:p-9">
-                <p className="text-xs font-bold uppercase tracking-[0.35em] text-violet-400">
-                    Select your scene
+            <main className="booking-page booking-page-state">
+                <p>
+                    {pageError ||
+                        "Event not found"}
                 </p>
 
-                <h1 className="display-font mt-3 text-5xl text-white sm:text-7xl">
+                <button
+                    type="button"
+                    onClick={() =>
+                        loadEvent()
+                    }
+                >
+                    TRY AGAIN
+                </button>
+            </main>
+        );
+    }
+
+    if (booking) {
+        return (
+            <main className="booking-page">
+                <section className="booking-success">
+                    <div className="booking-success-icon">
+                        🎉
+                    </div>
+
+                    <h1>
+                        BOOKING CONFIRMED!
+                    </h1>
+
+                    <p>
+                        Booking reference:
+                        {" "}
+                        <strong>
+                            {booking.reference}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Seats:
+                        {" "}
+                        {booking.seatNumbers.join(
+                            ", ",
+                        )}
+                    </p>
+
+                    <p>
+                        {event.name}
+                        {" · "}
+                        {event.venue}
+                    </p>
+
+                    <Link
+                        to="/"
+                        className="booking-primary-button"
+                    >
+                        BROWSE MORE EVENTS
+                    </Link>
+                </section>
+            </main>
+        );
+    }
+
+    return (
+        <main className="booking-page">
+            <Link
+                to="/#events"
+                className="booking-back-link"
+            >
+                ← Back to events
+            </Link>
+
+            <section
+                className={`booking-event-header booking-event-header--${presentation.theme}`}
+                style={{
+                    "--event-accent":
+                        presentation.accent,
+                }}
+            >
+                <span className="reference-event-category">
+                    {presentation.category}
+                </span>
+
+                <h1>
                     {event.name}
                 </h1>
 
-                <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-400">
-                    <span className="flex items-center gap-2">
-                        <CalendarDays
-                            size={17}
-                            className="text-violet-400"
-                        />
-                        {new Intl.DateTimeFormat("en-IN", {
-                            dateStyle: "full",
-                            timeStyle: "short",
-                        }).format(new Date(event.dateTime))}
+                <div className="booking-event-meta">
+                    <span>
+                        📍 {event.venue}
                     </span>
 
-                    <span className="flex items-center gap-2">
-                        <MapPin
-                            size={17}
-                            className="text-violet-400"
-                        />
-                        {event.venue}
+                    <span>
+                        🗓️
+                        {" "}
+                        {formatDateTime(
+                            event.dateTime,
+                        )}
                     </span>
 
-                    <span className="flex items-center gap-2">
-                        <Ticket
-                            size={17}
-                            className="text-violet-400"
-                        />
-                        {event.availableSeatCount} seats available
-                    </span>
+                    <strong>
+                        ₹
+                        {presentation.price.toLocaleString(
+                            "en-IN",
+                        )}
+                        {" "}
+                        / person
+                    </strong>
                 </div>
+            </section>
 
-                <div className="mt-9 rounded-2xl border border-violet-500/20 bg-violet-500/[0.06] p-6">
-                    <p className="text-sm leading-6 text-violet-200">
-                        Event loaded successfully with{" "}
-                        <strong>{seats.length}</strong> seats.
-                        Interactive seat selection, reservation
-                        countdown and booking confirmation are added
-                        in the next checkpoint.
+            {reservation && (
+                <CountdownTimer
+                    expiresAt={
+                        reservation.expiresAt
+                    }
+                    onExpire={
+                        handleExpire
+                    }
+                />
+            )}
+
+            {!reservation && (
+                <section className="booking-seat-panel">
+                    <h2>
+                        SELECT YOUR SEATS
+                    </h2>
+
+                    <SeatGrid
+                        seats={seats}
+                        selectedSeats={
+                            selectedSeats
+                        }
+                        onToggle={
+                            toggleSeat
+                        }
+                    />
+                </section>
+            )}
+
+            <section className="booking-action-panel">
+                {!reservation &&
+                    selectedSeats.length >
+                    0 && (
+                        <div className="booking-summary">
+                            <span>
+                                SELECTED:
+                                {" "}
+                                <strong>
+                                    {selectedSeats.join(
+                                        ", ",
+                                    )}
+                                </strong>
+                            </span>
+
+                            <b>
+                                ₹
+                                {(
+                                    selectedSeats.length *
+                                    presentation.price
+                                ).toLocaleString(
+                                    "en-IN",
+                                )}
+                            </b>
+                        </div>
+                    )}
+
+                {reservation && (
+                    <div className="booking-summary">
+                        <span>
+                            RESERVED:
+                            {" "}
+                            <strong>
+                                {reservation.seatNumbers.join(
+                                    ", ",
+                                )}
+                            </strong>
+                        </span>
+
+                        <b>
+                            ₹
+                            {(
+                                reservation
+                                    .seatNumbers
+                                    .length *
+                                presentation.price
+                            ).toLocaleString(
+                                "en-IN",
+                            )}
+                        </b>
+                    </div>
+                )}
+
+                {error && (
+                    <p className="booking-error">
+                        {error}
                     </p>
-                </div>
+                )}
+
+                {!reservation ? (
+                    <button
+                        type="button"
+                        className="booking-primary-button"
+                        disabled={loading}
+                        onClick={
+                            handleReserve
+                        }
+                    >
+                        {loading
+                            ? "RESERVING..."
+                            : `RESERVE ${selectedSeats.length ||
+                            ""
+                            } SEAT(S) →`}
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        className="booking-primary-button"
+                        disabled={loading}
+                        onClick={
+                            handleConfirm
+                        }
+                    >
+                        {loading
+                            ? "CONFIRMING..."
+                            : "CONFIRM BOOKING →"}
+                    </button>
+                )}
             </section>
         </main>
     );
