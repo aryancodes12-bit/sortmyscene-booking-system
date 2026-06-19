@@ -1,5 +1,6 @@
 import {
     useCallback,
+    useEffect,
     useState,
 } from "react";
 
@@ -9,9 +10,163 @@ import {
     reserveSeats,
 } from "../api";
 
-export function useReservation() {
-    const [reservation, setReservation] =
-        useState(null);
+const STORAGE_PREFIX =
+    "sortmyscene-active-reservation";
+
+const getStorageKey = (eventId) =>
+    `${STORAGE_PREFIX}:${eventId}`;
+
+const removeStoredReservation = (eventId) => {
+    if (!eventId) {
+        return;
+    }
+
+    sessionStorage.removeItem(
+        getStorageKey(eventId),
+    );
+};
+
+const readStoredReservation = (eventId) => {
+    if (!eventId) {
+        return null;
+    }
+
+    try {
+        const value = sessionStorage.getItem(
+            getStorageKey(eventId),
+        );
+
+        if (!value) {
+            return null;
+        }
+
+        const reservation = JSON.parse(value);
+
+        if (
+            !reservation?.expiresAt ||
+            new Date(reservation.expiresAt).getTime() <=
+            Date.now()
+        ) {
+            removeStoredReservation(eventId);
+            return null;
+        }
+
+        return reservation;
+    } catch {
+        removeStoredReservation(eventId);
+        return null;
+    }
+};
+
+const storeReservation = (
+    eventId,
+    reservation,
+) => {
+    sessionStorage.setItem(
+        getStorageKey(eventId),
+        JSON.stringify(reservation),
+    );
+};
+
+const getPayload = (response) =>
+    response?.data?.data ??
+    response?.data ??
+    {};
+
+const normalizeReservation = (
+    response,
+    fallbackEventId,
+) => {
+    const payload = getPayload(response);
+
+    const rawReservation =
+        payload?.reservation ??
+        payload;
+
+    const id =
+        rawReservation?.id ??
+        rawReservation?._id ??
+        rawReservation?.reservationId;
+
+    const expiresAt =
+        rawReservation?.expiresAt;
+
+    if (!id || !expiresAt) {
+        throw new Error(
+            "Reservation API returned an unexpected response shape",
+        );
+    }
+
+    return {
+        ...rawReservation,
+
+        id,
+
+        eventId:
+            rawReservation?.eventId?.id ??
+            rawReservation?.eventId?._id ??
+            rawReservation?.eventId ??
+            fallbackEventId,
+
+        seatNumbers:
+            rawReservation?.seatNumbers ??
+            rawReservation?.seats ??
+            [],
+    };
+};
+
+const normalizeBooking = (
+    response,
+    reservation,
+) => {
+    const payload = getPayload(response);
+
+    const rawBooking =
+        payload?.booking ??
+        payload;
+
+    const id =
+        rawBooking?.id ??
+        rawBooking?._id ??
+        rawBooking?.bookingId ??
+        reservation.id;
+
+    return {
+        ...rawBooking,
+
+        id,
+
+        reference:
+            rawBooking?.reference ??
+            rawBooking?.bookingReference ??
+            id,
+
+        seatNumbers:
+            rawBooking?.seatNumbers ??
+            rawBooking?.seats ??
+            reservation.seatNumbers,
+    };
+};
+
+const getRequestErrorMessage = (
+    error,
+    fallback,
+) => {
+    if (!error?.response && error?.message) {
+        return error.message;
+    }
+
+    return getApiErrorMessage(
+        error,
+        fallback,
+    );
+};
+
+export function useReservation(eventId) {
+    const [
+        reservation,
+        setReservation,
+    ] = useState(null);
 
     const [booking, setBooking] =
         useState(null);
@@ -22,26 +177,50 @@ export function useReservation() {
     const [error, setError] =
         useState("");
 
+    useEffect(() => {
+        setReservation(
+            readStoredReservation(eventId),
+        );
+
+        setBooking(null);
+        setError("");
+    }, [eventId]);
+
     const reserve = useCallback(
-        async (eventId, seatNumbers) => {
+        async (
+            requestedEventId,
+            seatNumbers,
+        ) => {
             setLoading(true);
             setError("");
 
             try {
-                const response = await reserveSeats({
-                    eventId,
-                    seatNumbers,
-                });
+                const response =
+                    await reserveSeats({
+                        eventId:
+                            requestedEventId,
+                        seatNumbers,
+                    });
 
                 const nextReservation =
-                    response.data.data.reservation;
+                    normalizeReservation(
+                        response,
+                        requestedEventId,
+                    );
 
-                setReservation(nextReservation);
+                setReservation(
+                    nextReservation,
+                );
+
+                storeReservation(
+                    requestedEventId,
+                    nextReservation,
+                );
 
                 return nextReservation;
             } catch (requestError) {
                 setError(
-                    getApiErrorMessage(
+                    getRequestErrorMessage(
                         requestError,
                         "Unable to reserve selected seats",
                     ),
@@ -55,46 +234,62 @@ export function useReservation() {
         [],
     );
 
-    const confirm = useCallback(async () => {
-        if (!reservation?.id) {
-            throw new Error(
-                "No active reservation exists",
-            );
-        }
+    const confirm =
+        useCallback(async () => {
+            if (!reservation?.id) {
+                throw new Error(
+                    "No active reservation exists",
+                );
+            }
 
-        setLoading(true);
-        setError("");
+            setLoading(true);
+            setError("");
 
-        try {
-            const response = await confirmBooking({
-                reservationId: reservation.id,
-            });
+            try {
+                const response =
+                    await confirmBooking({
+                        reservationId:
+                            reservation.id,
+                    });
 
-            const confirmedBooking =
-                response.data.data.booking;
+                const confirmedBooking =
+                    normalizeBooking(
+                        response,
+                        reservation,
+                    );
 
-            setBooking(confirmedBooking);
+                setBooking(
+                    confirmedBooking,
+                );
 
-            return confirmedBooking;
-        } catch (requestError) {
-            setError(
-                getApiErrorMessage(
-                    requestError,
-                    "Unable to confirm booking",
-                ),
-            );
+                removeStoredReservation(
+                    eventId,
+                );
 
-            throw requestError;
-        } finally {
-            setLoading(false);
-        }
-    }, [reservation]);
+                setReservation(null);
+
+                return confirmedBooking;
+            } catch (requestError) {
+                setError(
+                    getRequestErrorMessage(
+                        requestError,
+                        "Unable to confirm booking",
+                    ),
+                );
+
+                throw requestError;
+            } finally {
+                setLoading(false);
+            }
+        }, [eventId, reservation]);
 
     const clear = useCallback(() => {
+        removeStoredReservation(eventId);
+
         setReservation(null);
         setBooking(null);
         setError("");
-    }, []);
+    }, [eventId]);
 
     return {
         reservation,

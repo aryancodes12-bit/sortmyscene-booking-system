@@ -79,7 +79,7 @@ export default function EventDetail() {
         reserve,
         confirm,
         clear,
-    } = useReservation();
+    } = useReservation(eventId);
 
     const loadEvent =
         useCallback(
@@ -118,12 +118,10 @@ export default function EventDetail() {
         );
 
     useEffect(() => {
-        clear();
         setSelectedSeats([]);
         loadEvent();
     }, [
         eventId,
-        clear,
         loadEvent,
     ]);
 
