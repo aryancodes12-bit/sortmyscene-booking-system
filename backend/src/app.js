@@ -4,7 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const authRoutes = require("./routes/auth.routes");
-
+const eventRoutes = require("./routes/event.routes");
 const app = express();
 
 app.disable("x-powered-by");
@@ -42,7 +42,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/events", eventRoutes);
 app.use((req, res) => {
     res.status(404).json({
         success: false,
