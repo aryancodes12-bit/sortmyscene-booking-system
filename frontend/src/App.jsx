@@ -1,25 +1,19 @@
-import { useState } from "react";
+import { useLocation } from "react-router";
 
-import AuthModal from "./components/auth/AuthModal";
 import Navbar from "./components/common/Navbar";
 import AppRoutes from "./routes/AppRoutes";
 
 export default function App() {
-  const [authOpen, setAuthOpen] =
-    useState(false);
+  const location = useLocation();
+
+  const hideNavbar =
+    location.pathname === "/auth";
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar
-        onOpenAuth={() => setAuthOpen(true)}
-      />
+    <div className="app-shell">
+      {!hideNavbar && <Navbar />}
 
       <AppRoutes />
-
-      <AuthModal
-        isOpen={authOpen}
-        onClose={() => setAuthOpen(false)}
-      />
     </div>
   );
 }
