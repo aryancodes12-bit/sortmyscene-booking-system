@@ -11,28 +11,65 @@ const reservationRoutes = require(
 const bookingRoutes = require(
     "./routes/booking.routes",
 );
+
 const app = express();
 
-app.disable("x-powered-by");
-
-app.use(helmet());
 const allowedOrigins = (
     process.env.CLIENT_URLS ||
     process.env.CLIENT_URL ||
     "http://localhost:5173"
 )
     .split(",")
-    .map((origin) => origin.trim());
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+app.disable("x-powered-by");
+
+app.use(helmet());
+
 app.use(
     cors({
-        origin: allowedOrigins,
-        methods: ["GET", "POST", "PATCH", "DELETE"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        origin(origin, callback) {
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            const error = new Error(
+                `Origin ${origin} is not allowed by CORS`,
+            );
+
+            error.statusCode = 403;
+            error.code = "CORS_ORIGIN_DENIED";
+
+            return callback(error);
+        },
+
+        methods: [
+            "GET",
+            "POST",
+            "PATCH",
+            "DELETE",
+            "OPTIONS",
+        ],
+
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+        ],
     }),
 );
 
 app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(
+    express.urlencoded({
+        extended: true,
+        limit: "10kb",
+    }),
+);
 
 if (process.env.NODE_ENV !== "test") {
     app.use(morgan("dev"));
