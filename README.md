@@ -73,7 +73,22 @@ The core booking flow uses MongoDB transactions, conditional seat updates, and s
 - Nodemon
 - ESLint
 - Git and GitHub
+---
 
+## Deployment
+> **Deployment note:** The backend is hosted on Render’s free tier. After a period of inactivity, the first API request may take up to 60 seconds while the service wakes up. Subsequent requests work normally.
+
+| Service | Live URL |
+|---|---|
+| Frontend | [SeatSync Web App](https://seat-sync-rho.vercel.app) |
+| Backend API | [SeatSync API](https://sortmyscene-api-2w7a.onrender.com) |
+| Health Check | [API Health](https://sortmyscene-api-2w7a.onrender.com/api/health) |
+
+> The Render free instance may require a short cold-start period after inactivity.
+
+Repository: [github.com/aryancodes12-bit/sortmyscene-booking-system](https://github.com/aryancodes12-bit/sortmyscene-booking-system)
+
+---
 ---
 
 ## Screenshots
@@ -741,21 +756,7 @@ The global state is limited to authentication and a small amount of booking stat
 | Automated tests | ✅ | Concurrency and expiration integration tests |
 | Documentation | ✅ | Architecture, API, setup, testing, screenshots, and checklist |
 
----
 
-## Deployment
-
-| Service | Live URL |
-|---|---|
-| Frontend | [SeatSync Web App](https://seat-sync-rho.vercel.app) |
-| Backend API | [SeatSync API](https://sortmyscene-api-2w7a.onrender.com) |
-| Health Check | [API Health](https://sortmyscene-api-2w7a.onrender.com/api/health) |
-
-> The Render free instance may require a short cold-start period after inactivity.
-
-Repository: [github.com/aryancodes12-bit/sortmyscene-booking-system](https://github.com/aryancodes12-bit/sortmyscene-booking-system)
-
----
 
 ## Author
 
